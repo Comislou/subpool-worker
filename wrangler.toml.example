@@ -1,4 +1,4 @@
-name = "subpool-worker"
+name = "__WORKER_NAME__"
 main = "src/index.js"
 compatibility_date = "2025-11-02"
 
@@ -9,11 +9,11 @@ send_metrics = false
 # KV 命名空间
 [[kv_namespaces]]
 binding = "KV"  # 不要修改此项
-id = "e24c1a41ad47427688d307b9316eb7cb"
+id = "__KV_NAMESPACE_ID__"
 
 [observability]
 enabled = true
 head_sampling_rate = 1
 
 [vars]
-ADMIN_PASSWORD = "admin"
+ADMIN_PASSWORD = "__ADMIN_PASSWORD__"
