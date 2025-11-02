@@ -238,7 +238,12 @@ export function renderAdminPage() {
                         case 'new-group': this.state.selectedGroupToken = null; this.state.isNewGroup = true; this.render(); break;
                         case 'generate-token': const { token } = await this.api.generateToken(); document.getElementById('group-token').value = token; break;
                         case 'save-group': await this.saveGroup(); break;
-                        case 'delete-group': if (await this.UI.confirm('确定要删除这个订阅组吗？此操作不可撤销。')) await this.deleteGroup(); break;
+                        case 'delete-group':
+                            const tokenToDelete = this.state.selectedGroupToken;
+                            if (tokenToDelete && await this.UI.confirm('确定要删除这个订阅组吗？此操作不可撤销。')) {
+                                await this.deleteGroup(tokenToDelete);
+                            }
+                            break;
                         case 'save-settings': await this.saveSettings(); break;
                     }
                 },
@@ -282,7 +287,22 @@ export function renderAdminPage() {
                         this.UI.showToast('保存失败', 'error');
                     }
                 },
-                async deleteGroup() { const token = this.state.selectedGroupToken; try { await this.api.deleteGroup(token); await this.refreshData(); this.state.selectedGroupToken = null; this.state.isNewGroup = false; this.render(); this.UI.showToast('删除成功！'); } catch (err) { console.error(err); this.UI.showToast('删除失败', 'error'); } },
+                async deleteGroup(token) {
+                    try {
+                        await this.api.deleteGroup(token);
+                        await this.refreshData();
+                        // If the deleted group was the selected one, clear the selection
+                        if (this.state.selectedGroupToken === token) {
+                            this.state.selectedGroupToken = null;
+                            this.state.isNewGroup = false;
+                        }
+                        this.render();
+                        this.UI.showToast('删除成功！');
+                    } catch (err) {
+                        console.error(err);
+                        this.UI.showToast('删除失败', 'error');
+                    }
+                },
                 async saveSettings() { const form = document.getElementById('settings-form'); const newConfig = { adminPassword: form.elements['admin-password'].value || undefined, blockBots: form.elements['block-bots'].checked, telegram: { enabled: form.elements['tg-enabled'].checked, botToken: form.elements['tg-token'].value, chatId: form.elements['tg-chatid'].value, }, subconverter: { url: form.elements['subconverter-url'].value, configUrl: form.elements['subconverter-config'].value, } }; try { await this.api.saveConfig(newConfig); if (newConfig.adminPassword) { this.state.password = newConfig.adminPassword; sessionStorage.setItem('admin_password', newConfig.adminPassword); } await this.refreshData(); this.render(); this.UI.showToast('设置已保存！'); } catch (err) { console.error(err); this.UI.showToast('保存失败', 'error'); } },
                 
                 // --- UI & RENDERING ---
