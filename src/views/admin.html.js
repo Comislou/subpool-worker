@@ -40,15 +40,17 @@ export function renderAdminPage() {
                 border-right: 1px solid var(--border-color); display: flex; flex-direction: column;
                 overflow-y: auto;
             }
-            .sidebar-item {
-                padding: 12px 15px; border-radius: 6px; cursor: pointer;
-                margin-bottom: 5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            }
+            .sidebar-item { padding: 12px 15px; border-radius: 6px; cursor: pointer; margin-bottom: 5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .sidebar-item:hover { background-color: var(--hover-bg); }
             .sidebar-item.active { background-color: var(--active-bg); color: var(--active-text); }
             .sidebar-item.new { color: var(--primary-color); border: 1px dashed var(--primary-color); text-align: center; }
             .content-area { flex-grow: 1; padding: 20px; overflow-y: auto; }
             .form-group { margin-bottom: 20px; }
+            .form-container {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
             label { display: block; font-weight: 600; margin-bottom: 8px; }
             input[type="text"], input[type="password"], textarea {
                 width: 100%; padding: 10px; border: 1px solid var(--border-color);
@@ -71,6 +73,7 @@ export function renderAdminPage() {
             .btn-secondary { background-color: #6c757d; color: #fff; }
             .btn-secondary:hover { background-color: #5a6268; }
             .actions { display: flex; justify-content: space-between; margin-top: 20px; }
+            .actions-center { justify-content: center; }
             .hidden { display: none; }
             #toast {
                 position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -92,10 +95,7 @@ export function renderAdminPage() {
             .modal-box .form-group { margin-bottom: 15px; }
             .modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
             .modal-error { color: var(--danger-color); font-size: 14px; margin-top: 10px; height: 1.2em; }
-            .spinner {
-                border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color);
-                border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;
-            }
+            .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             .loading-container { display: flex; align-items: center; justify-content: center; height: 100%; gap: 10px; font-size: 18px; color: #6c757d; }
         </style>
@@ -134,9 +134,9 @@ export function renderAdminPage() {
                     this.state.password = sessionStorage.getItem('admin_password');
                     
                     if (this.state.password) {
+                        this.state.isAuthenticating = false;
                         await this.fetchData();
                     } else {
-                        // isAuthenticating is true by default, so just render.
                         this.render();
                     }
                 },
@@ -225,12 +225,12 @@ export function renderAdminPage() {
                         case 'confirm-action':
                             this.state.confirmPromise?.resolve(true);
                             this.state.confirmPromise = null;
-                            this.render();
+                            this.cache.modal.innerHTML = '';
                             break;
                         case 'cancel-action':
                             this.state.confirmPromise?.resolve(false);
                             this.state.confirmPromise = null;
-                            this.render();
+                            this.cache.modal.innerHTML = '';
                             break;
                         // Navigation & CRUD
                         case 'navigate': this.state.currentView = e.target.dataset.view; this.state.selectedGroupToken = null; this.state.isNewGroup = false; this.render(); break;
@@ -307,8 +307,20 @@ export function renderAdminPage() {
                 
                 // --- UI & RENDERING ---
                 UI: {
-                    showToast(message, type = 'success') { App.cache.toast.textContent = message; App.cache.toast.style.backgroundColor = type === 'error' ? 'var(--danger-color)' : 'var(--success-color)'; App.cache.toast.classList.add('show'); setTimeout(() => App.cache.toast.classList.remove('show'), 3000); },
-                    confirm(message) { App.state.confirmMessage = message; App.render(); return new Promise(resolve => { App.state.confirmPromise = { resolve }; }); },
+                    showToast(message, type = 'success') { 
+                        App.cache.toast.textContent = message; 
+                        App.cache.toast.style.backgroundColor = type === 'error' ? 'var(--danger-color)' : 'var(--success-color)'; 
+                        App.cache.toast.classList.add('show'); 
+                        setTimeout(() => App.cache.toast.classList.remove('show'), 3000); 
+                    },
+    
+                    confirm(message) { 
+                        App.state.confirmMessage = message; 
+                        App.cache.modal.innerHTML = this.renderConfirmModal();
+                        return new Promise(resolve => { 
+                            App.state.confirmPromise = { resolve }; 
+                        }); 
+                    },
                     renderLoginModal() { return \` <div class="modal-overlay"> <div class="modal-box"> <form id="login-form"> <h2>需要认证</h2> <p>请输入管理员密码以访问后台。</p> <div class="form-group"> <input type="password" id="password-input" required autofocus> </div> <div class="modal-error">\${App.state.authError || ''}</div> <div class="modal-actions"> \${App.state.authLoading ? '<div class="spinner"></div>' : '<button class="btn btn-primary" data-action="submit-login">登录</button>'} </div> </form> </div> </div> \`; },
                     renderConfirmModal() { return \` <div class="modal-overlay"> <div class="modal-box"> <h2>请确认</h2> <p>\${App.state.confirmMessage}</p> <div class="modal-actions"> <button class="btn btn-secondary" data-action="cancel-action">取消</button> <button class="btn btn-danger" data-action="confirm-action">确认</button> </div> </div> </div> \`; },
                 },
@@ -324,7 +336,7 @@ export function renderAdminPage() {
                 },
                 renderSubscriptionsView() { return \` <aside class="sidebar"> <div class="sidebar-item new" data-action="new-group"> + 创建新订阅组 </div> \${this.state.groups.map(g => \`<div class="sidebar-item \${(this.state.selectedGroupToken === g.token && !this.state.isNewGroup) ? 'active' : ''}" data-action="select-group" data-token="\${g.token}"> \${g.name} </div>\`).join('')} </aside> <section class="content-area"> \${(this.state.selectedGroupToken || this.state.isNewGroup) ? this.renderGroupEditor() : '<p>请从左侧选择一个订阅组进行编辑，或创建一个新组。</p>'} </section> \`; },
                 renderGroupEditor() { const group = this.state.isNewGroup ? { name: '', token: '', allowChinaAccess: false, nodes: '', filter: { enabled: false, rules: [] } } : this.state.groups.find(g => g.token === this.state.selectedGroupToken); if (!group) return '<p>无法找到该订阅组。</p>'; return \` <form id="group-form"> <h2>\${this.state.isNewGroup ? '创建新订阅组' : '编辑: ' + group.name}</h2> <div class="form-group"> <label for="group-name">组名</label> <input type="text" id="group-name" value="\${group.name}"> </div> <div class="form-group"> <label for="group-token">Token</label> <div class="token-group"> <input type="text" id="group-token" value="\${group.token}" \${!this.state.isNewGroup ? 'readonly' : ''}> \${this.state.isNewGroup ? '<button class="btn btn-secondary" data-action="generate-token">随机生成</button>' : ''} </div> </div> <div class="form-group"> <label for="group-nodes">订阅链接 / 节点 (每行一个)</label> <textarea id="group-nodes">\${group.nodes || ''}</textarea> </div> <div class="form-group checkbox-group"> <input type="checkbox" id="allow-china" \${group.allowChinaAccess ? 'checked' : ''}> <label for="allow-china">允许中国大陆 IP 访问</label> </div> <fieldset> <legend>过滤器</legend> <div class="form-group checkbox-group"> <input type="checkbox" id="filter-enabled" \${group.filter && group.filter.enabled ? 'checked' : ''}> <label for="filter-enabled">启用节点过滤器</label> </div> <div class="form-group"> <label for="filter-rules">过滤规则 (每行一个正则表达式, e.g., /过期/i)</label> <textarea id="filter-rules" placeholder="/剩余流量/i\\n/过期时间/i">\${(group.filter && group.filter.rules || []).join('\\n')}</textarea> </div> </fieldset> <div class="actions"> <button class="btn btn-primary" data-action="save-group">保存</button> \${!this.state.isNewGroup ? '<button class="btn btn-danger" data-action="delete-group">删除</button>' : ''} </div> </form> \`; },
-                renderSettingsView() { const cfg = this.state.config; return \` <form id="settings-form"> <h2>全局设置</h2> <fieldset> <legend>安全设置</legend> <div class="form-group"> <label for="admin-password">管理密码 (留空则不修改)</label> <input type="password" id="admin-password" placeholder="输入新密码"> </div> <div class="form-group checkbox-group"> <input type="checkbox" id="block-bots" \${cfg.blockBots ? 'checked' : ''}> <label for="block-bots">阻止常见爬虫/机器人访问</label> </div> </fieldset> <fieldset> <legend>Telegram 通知</legend> <div class="form-group checkbox-group"> <input type="checkbox" id="tg-enabled" \${cfg.telegram && cfg.telegram.enabled ? 'checked' : ''}> <label for="tg-enabled">启用 TG 通知</label> </div> <div class="form-group"> <label for="tg-token">Bot Token</label> <input type="text" id="tg-token" value="\${cfg.telegram && cfg.telegram.botToken || ''}"> </div> <div class="form-group"> <label for="tg-chatid">Chat ID</label> <input type="text" id="tg-chatid" value="\${cfg.telegram && cfg.telegram.chatId || ''}"> </div> </fieldset> <fieldset> <legend>订阅转换</legend> <div class="form-group"> <label for="subconverter-url">Subconverter 后端地址 (不含 http(s)://)</label> <input type="text" id="subconverter-url" value="\${cfg.subconverter && cfg.subconverter.url || ''}"> </div> <div class="form-group"> <label for="subconverter-config">Subconverter 配置文件 URL</label> <input type="text" id="subconverter-config" value="\${cfg.subconverter && cfg.subconverter.configUrl || ''}"> </div> </fieldset> <div class="actions"> <button class="btn btn-primary" data-action="save-settings">保存设置</button> </div> </form> \`; }
+                renderSettingsView() { const cfg = this.state.config; return \` <div class="form-container"> <form id="settings-form"> <h2>全局设置</h2> <fieldset> <legend>安全设置</legend> <div class="form-group"> <label for="admin-password">管理密码 (留空则不修改)</label> <input type="password" id="admin-password" placeholder="输入新密码"> </div> <div class="form-group checkbox-group"> <input type="checkbox" id="block-bots" \${cfg.blockBots ? 'checked' : ''}> <label for="block-bots">阻止常见爬虫/机器人访问</label> </div> </fieldset> <fieldset> <legend>Telegram 通知</legend> <div class="form-group checkbox-group"> <input type="checkbox" id="tg-enabled" \${cfg.telegram && cfg.telegram.enabled ? 'checked' : ''}> <label for="tg-enabled">启用 TG 通知</label> </div> <div class="form-group"> <label for="tg-token">Bot Token</label> <input type="text" id="tg-token" value="\${cfg.telegram && cfg.telegram.botToken || ''}"> </div> <div class="form-group"> <label for="tg-chatid">Chat ID</label> <input type="text" id="tg-chatid" value="\${cfg.telegram && cfg.telegram.chatId || ''}"> </div> </fieldset> <fieldset> <legend>订阅转换</legend> <div class="form-group"> <label for="subconverter-url">Subconverter 后端地址 (不含 http(s)://)</label> <input type="text" id="subconverter-url" value="\${cfg.subconverter && cfg.subconverter.url || ''}"> </div> <div class="form-group"> <label for="subconverter-config">Subconverter 配置文件 URL</label> <input type="text" id="subconverter-config" value="\${cfg.subconverter && cfg.subconverter.configUrl || ''}"> </div> </fieldset> <div class="actions actions-center"> <button class="btn btn-primary" data-action="save-settings">保存设置</button> </div> </form> </div> \`; }
             };
             document.addEventListener('DOMContentLoaded', () => App.init());
         </script>
