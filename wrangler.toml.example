@@ -18,3 +18,4 @@ head_sampling_rate = 1
 [vars]
 ADMIN_PASSWORD = "__ADMIN_PASSWORD__"
 JWT_SECRET = "__JWT_SECRET__"
+LOG_LEVEL = "info"

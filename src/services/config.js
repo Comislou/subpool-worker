@@ -2,7 +2,7 @@ import { KVService } from './kv.js';
 
 // 定义一套基础的默认配置
 const DEFAULT_CONFIG = {
-  adminPassword: '', // 强烈建议在 KV 中设置
+  adminPassword: '',
   blockBots: true,
   fileName: 'cf-worker-sub',
   subUpdateTime: 4,
@@ -25,10 +25,12 @@ const DEFAULT_CONFIG = {
 
 let _config = null;
 let _env = null;
+let _ctx = null;
 
 export class ConfigService {
-  static async init(env) {
+  static async init(env, ctx) {
     _env = env;
+    _ctx = ctx;
     const kvConfig = await KVService.getGlobalConfig().catch(() => null) || {};
     // 深层合并，防止覆盖整个对象
     _config = {
@@ -53,5 +55,9 @@ export class ConfigService {
 
   static getEnv() {
     return _env;
+  }
+
+  static getCtx() {
+    return _ctx;
   }
 }
