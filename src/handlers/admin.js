@@ -53,7 +53,7 @@ async function handleApiRequest(request, url, logger) {
 		const oldConfig = await KVService.getGlobalConfig() || {};
 		const mergedConfig = { ...oldConfig, ...newConfig };
 		await KVService.saveGlobalConfig(mergedConfig);
-		logger.info('Global config updated', { url: request.url }, { notify: true });
+		logger.info('Global config updated', {}, { notify: true });
 		return response.json({ success: true });
 	}
 	if (pathParts[2] === 'groups' && method === 'GET') {
@@ -64,7 +64,7 @@ async function handleApiRequest(request, url, logger) {
 		const newGroup = await request.json();
 		if (!newGroup.token) newGroup.token = generateToken();
 		await KVService.saveGroup(newGroup);
-		logger.info('Group created, name: ${newGroup.name}', { url: request.url }, { notify: true });
+		logger.info(`Group created, name: ${newGroup.name}`, {}, { notify: true });
 		return response.json(newGroup);
 	}
 	if (pathParts[2] === 'groups' && pathParts[3] && method === 'PUT') {
@@ -72,13 +72,13 @@ async function handleApiRequest(request, url, logger) {
 		const groupData = await request.json();
 		groupData.token = token;
 		await KVService.saveGroup(groupData);
-		logger.info('Group updated, name: ${groupData.name}', { url: request.url }, { notify: true });
+		logger.info(`Group updated, name: ${groupData.name}`, {}, { notify: true });
 		return response.json(groupData);
 	}
 	if (pathParts[2] === 'groups' && pathParts[3] && method === 'DELETE') {
 		const token = pathParts[3];
 		await KVService.deleteGroup(token);
-		logger.info('Group deleted, token: ${token}', { url: request.url }, { notify: true });
+		logger.info(`Group deleted, token: ${token}`, {}, { notify: true });
 		return response.json({ success: true });
 	}
 	if (pathParts[2] === 'utils' && pathParts[3] === 'gentoken' && method === 'GET') {
@@ -94,7 +94,7 @@ export async function handleAdminRequest(request, logger) {
 	const url = new URL(request.url);
 	const jwtSecret = ConfigService.getEnv().JWT_SECRET;
 	if (!jwtSecret) {
-		logger.fatal('JWT_SECRET is not configured.', { url: request.url, notify: true });
+		logger.fatal('JWT_SECRET is not configured.');
 		return response.json({ error: 'JWT_SECRET is not configured.'}, 500);
 	}
 

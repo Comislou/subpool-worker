@@ -8,19 +8,28 @@ export class TelegramService {
     }
 
     const url = `https://api.telegram.org/bot${config.botToken}/sendMessage`;
-    const params = new URLSearchParams({
+    
+    const payload = {
       chat_id: config.chatId,
       text: message,
       parse_mode: 'HTML'
-    });
+    };
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    };
 
     try {
       // 使用 ctx.waitUntil 避免阻塞响应
       const ctx = ConfigService.getCtx();
       if (ctx) {
-        ctx.waitUntil(fetch(`${url}?${params.toString()}`));
+        ctx.waitUntil(fetch(url, options));
       } else {
-        await fetch(`${url}?${params.toString()}`);
+        await fetch(url, options);
       }
     } catch (error) {
       // 如果TG发送失败，我们只能在控制台记录，避免循环依赖
