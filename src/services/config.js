@@ -2,9 +2,9 @@ import { KVService } from './kv.js';
 
 // 定义一套基础的默认配置
 const DEFAULT_CONFIG = {
-  adminPassword: '',
+  adminPassword: 'admin_password',
   blockBots: true,
-  fileName: 'cf-worker-sub',
+  fileName: 'subpool-worker',
   subUpdateTime: 4,
   subscriptionInfo: {
       totalTB: 99,
@@ -17,7 +17,7 @@ const DEFAULT_CONFIG = {
     logAllAccess: false,
   },
   subconverter: {
-    url: 'subsec.illusionlie.com',
+    url: '',
     protocol: 'https',
     configUrl: 'https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_MultiCountry.ini',
   },
