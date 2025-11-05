@@ -42,10 +42,12 @@ async function handleApiRequest(request, url, logger) {
 	if (pathParts[2] === 'logout' && method === 'POST') {
 		return handleLogout();
 	}
+
 	if (pathParts[2] === 'config' && method === 'GET') {
 		const config = await KVService.getGlobalConfig() || ConfigService.get();
 		return response.json(config);
 	}
+
 	if (pathParts[2] === 'config' && method === 'PUT') {
 		const newConfig = await request.json();
 		// 合并而不是完全替换，防止丢失未在前端展示的配置项
@@ -55,17 +57,25 @@ async function handleApiRequest(request, url, logger) {
 		logger.info('Global config updated', {}, { notify: true });
 		return response.json({ success: true });
 	}
+
 	if (pathParts[2] === 'groups' && method === 'GET') {
 		const groups = await KVService.getAllGroups();
 		return response.json(groups);
 	}
+
 	if (pathParts[2] === 'groups' && method === 'POST') {
 		const newGroup = await request.json();
+    if (!newGroup || typeof newGroup.name !== 'string' || !Array.isArray(newGroup.subscriptions)) {
+      logger.warn('Invalid group data', { GroupData: newGroup });
+      return response.json({ error: 'Invalid group data' }, 400);
+    }
+
 		if (!newGroup.token) newGroup.token = generateToken();
 		await KVService.saveGroup(newGroup);
 		logger.info(`Group created`, { GroupName: newGroup.name, Token: newGroup.token }, { notify: true });
 		return response.json(newGroup);
 	}
+
 	if (pathParts[2] === 'groups' && pathParts[3] && method === 'PUT') {
 		const token = pathParts[3];
 		const groupData = await request.json();
@@ -74,12 +84,14 @@ async function handleApiRequest(request, url, logger) {
 		logger.info(`Group updated`, { GroupName: groupData.name, Token: groupData.token }, { notify: true });
 		return response.json(groupData);
 	}
+
 	if (pathParts[2] === 'groups' && pathParts[3] && method === 'DELETE') {
 		const token = pathParts[3];
 		await KVService.deleteGroup(token);
 		logger.warn(`Group deleted`, { Token: token }, { notify: true });
 		return response.json({ success: true });
 	}
+
 	if (pathParts[2] === 'utils' && pathParts[3] === 'gentoken' && method === 'GET') {
 		return response.json({ token: generateToken() });
 	}
