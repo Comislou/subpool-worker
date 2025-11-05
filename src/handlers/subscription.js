@@ -13,7 +13,7 @@ export async function handleSubscriptionRequest(request, token, logger) {
   }
 
   const config = ConfigService.get();
-  const country = request.headers.get('cf-ipcountry');
+  const country = request.headers.get('cf-ipcountry')|| 'XX'; // 'XX' for unknown
   if (country === 'CN' && !group.allowChinaAccess) {
     logger.warn('Blocked China access attempt', { UserAgent: request.headers.get('User-Agent'), URL: request.url }, { notify: true });
     return response.normal(renderNginxWelcomePage(), 403);
