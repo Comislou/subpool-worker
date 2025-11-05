@@ -2,22 +2,36 @@ export function applyFilter(content, filterConfig) {
   if (!filterConfig || !filterConfig.enabled || !filterConfig.rules || filterConfig.rules.length === 0) {
     return content;
   }
-  // 将字符串规则转换为 RegExp 对象
+  
+  // 将字符串规则转换为 RegExp 对象，同时创建URL编码版本
   const regexRules = filterConfig.rules.map(rule => {
     try {
       const match = rule.match(new RegExp('^/(.*?)/([gimy]*)$'));
-      return new RegExp(match[1], match[2]);
+      const pattern = match[1];
+      const flags = match[2];
+      
+      // 创建原始规则和URL编码规则
+      const originalRegex = new RegExp(pattern, flags);
+      const encodedRegex = new RegExp(encodeURIComponent(pattern), flags);
+      
+      return { original: originalRegex, encoded: encodedRegex };
     } catch (e) {
-      return new RegExp(rule); // 兼容非 /.../i 格式的旧规则
+      // 兼容非 /.../i 格式的旧规则
+      const originalRegex = new RegExp(rule);
+      const encodedRegex = new RegExp(encodeURIComponent(rule));
+      return { original: originalRegex, encoded: encodedRegex };
     }
   });
 
   return content.split('\n')
-  .filter(line => {
-    if (!line.trim()) return true;
-    return !regexRules.some(rule => rule.test(line));
-  })
-  .join('\n');
+    .filter(line => {
+      if (!line.trim()) return true;
+      // 同时测试原始规则和编码规则
+      return !regexRules.some(ruleSet => 
+        ruleSet.original.test(line) || ruleSet.encoded.test(line)
+      );
+    })
+    .join('\n');
 }
 
 export function isBot(userAgent) {
