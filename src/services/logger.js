@@ -40,7 +40,7 @@ export default class LoggerService {
    * @param {string} message 日志消息
    * @param {object} [data={}] 附加数据
    */
-  async _log(level, message, data = {}, options = {}) {
+  _log(level, message, data = {}, options = {}) {
     const levelNumber = logLevels[level];
 
     // 条件检查：
@@ -69,7 +69,7 @@ export default class LoggerService {
     };
 
     if (options.notify || level === 'error' || level === 'fatal') {
-      await this.sendNotification(logObject, data, this.request);
+      this.sendNotification(logObject, data, this.request);
     }
 
     // 使用不同的控制台方法。这有助于在某些日志查看器中进行过滤
@@ -95,7 +95,7 @@ export default class LoggerService {
    * 格式化并发送Telegram通知
    * @private
    */
-  async sendNotification(logObject, data, request) {
+  sendNotification(logObject, data, request) {
     const { level, message, context } = logObject;
     const emoji = {
         INFO: 'ℹ️',
@@ -130,11 +130,11 @@ export default class LoggerService {
   }
 
   // Public-facing log methods
-  async debug(message, data, options) { this._log('debug', message, data, options); }
-  async info(message, data, options) { this._log('info', message, data, options); }
-  async warn(message, data, options) { this._log('warn', message, data, options); }
+  debug(message, data, options) { this._log('debug', message, data, options); }
+  info(message, data, options) { this._log('info', message, data, options); }
+  warn(message, data, options) { this._log('warn', message, data, options); }
 
-  async error(message, data, options) {
+  error(message, data, options) {
     // 如果 message 是一个 Error 对象，则将其转换为可记录的对象
     if (message instanceof Error) {
         const errorData = {
@@ -151,5 +151,5 @@ export default class LoggerService {
     }
   }
   
-  async fatal(message, data, options) { this._log('fatal', message, data, options); }
+  fatal(message, data, options) { this._log('fatal', message, data, options); }
 }
