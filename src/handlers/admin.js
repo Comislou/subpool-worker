@@ -4,6 +4,7 @@ import { renderAdminPage } from '../views/admin.html.js';
 import { renderLoginPage } from '../views/login.html.js';
 import { response, generateToken } from '../utils.js';
 import { verifyJwt, createJwt, refreshJwt, getAuthCookie, createAuthCookie } from '../services/auth.js';
+import { Router } from 'itty-router';
 
 // 登录处理器
 async function handleLogin(request, logger) {
@@ -35,66 +36,77 @@ function handleLogout() {
 
 // API请求处理器 (它假设请求已通过认证)
 async function handleApiRequest(request, url, logger) {
-	const method = request.method;
-	const pathParts = url.pathname.split('/').filter(Boolean); // ['admin', 'api', 'groups', 'token123']
+  const router = Router();
 
-	// 路由到不同的 API 处理器
-	if (pathParts[2] === 'logout' && method === 'POST') {
-		return handleLogout();
-	}
+	// 登出
+  router.post('/admin/api/logout', () => handleLogout());
 
-	if (pathParts[2] === 'config' && method === 'GET') {
-		const config = await KVService.getGlobalConfig() || ConfigService.get();
+  // 获取配置
+  router.get('/admin/api/config', async () => {
+    const config = await KVService.getGlobalConfig() || ConfigService.get();
 		return response.json(config);
-	}
+  });
 
-	if (pathParts[2] === 'config' && method === 'PUT') {
-		const newConfig = await request.json();
+  // 保存配置
+  router.put('/admin/api/config', async () => {
+    const newConfig = await request.json();
 		// 合并而不是完全替换，防止丢失未在前端展示的配置项
 		const oldConfig = await KVService.getGlobalConfig() || {};
 		const mergedConfig = { ...oldConfig, ...newConfig };
 		await KVService.saveGlobalConfig(mergedConfig);
 		logger.info('Global config updated', {}, { notify: true });
 		return response.json({ success: true });
-	}
+  });
 
-	if (pathParts[2] === 'groups' && method === 'GET') {
-		const groups = await KVService.getAllGroups();
+  // 获取所有订阅组
+  router.get('/admin/api/groups', async () => {
+    const groups = await KVService.getAllGroups();
 		return response.json(groups);
-	}
+  });
 
-	if (pathParts[2] === 'groups' && method === 'POST') {
-		const newGroup = await request.json();
+  // 创建新订阅组
+  router.post('/admin/api/groups', async () => {
+    const newGroup = await request.json();
     if (!newGroup || typeof newGroup.name !== 'string' || !Array.isArray(newGroup.subscriptions)) {
       logger.warn('Invalid group data', { GroupData: newGroup });
       return response.json({ error: 'Invalid group data' }, 400);
     }
 
-		if (!newGroup.token) newGroup.token = generateToken();
+    const group = await KVService.getGroup(newGroup.name);
+    if (group) {
+      logger.warn('Group already exists', { GroupName: newGroup.name });
+      return response.json({ error: 'Group already exists' }, 400);
+    }
+
+    if (!newGroup.token) newGroup.token = generateToken();
 		await KVService.saveGroup(newGroup);
 		logger.info(`Group created`, { GroupName: newGroup.name, Token: newGroup.token }, { notify: true });
 		return response.json(newGroup);
-	}
+  });
 
-	if (pathParts[2] === 'groups' && pathParts[3] && method === 'PUT') {
-		const token = pathParts[3];
-		const groupData = await request.json();
-		groupData.token = token;
+  // 更新订阅组
+  router.put('/admin/api/groups/:token', async ({ params }) => {
+    const token = params.token;
+    const groupData = await request.json();
+    groupData.token = token;
 		await KVService.saveGroup(groupData);
 		logger.info(`Group updated`, { GroupName: groupData.name, Token: groupData.token }, { notify: true });
 		return response.json(groupData);
-	}
+  });
 
-	if (pathParts[2] === 'groups' && pathParts[3] && method === 'DELETE') {
-		const token = pathParts[3];
+  // 删除订阅组
+  router.delete('/admin/api/groups/:token', async ({ params }) => {
+    const token = params.token;
 		await KVService.deleteGroup(token);
 		logger.warn(`Group deleted`, { Token: token }, { notify: true });
 		return response.json({ success: true });
-	}
+  });
 
-	if (pathParts[2] === 'utils' && pathParts[3] === 'gentoken' && method === 'GET') {
-		return response.json({ token: generateToken() });
-	}
+  // 生成新token
+  router.get('/admin/api/utils/gentoken', () => response.json({ token: generateToken() }));
+
+  const routerResponse = await router.fetch(request);
+  if (routerResponse) return routerResponse;
 
 	return response.json({ error: 'API endpoint not found' }, 404);
 }
@@ -103,18 +115,19 @@ async function handleApiRequest(request, url, logger) {
 // 主处理器
 export async function handleAdminRequest(request, logger) {
 	const url = new URL(request.url);
+  const router = Router();
 	const jwtSecret = ConfigService.getEnv().JWT_SECRET;
 	if (!jwtSecret) {
 		logger.fatal('JWT_SECRET is not configured.');
 		return response.json({ error: 'JWT_SECRET is not configured.'}, 500);
 	}
 
-	// 1. 检查是否是登录API的请求，如果是，则直接处理
-	if (url.pathname === '/admin/api/login' && request.method === 'POST') {
-		return handleLogin(request, logger);
-	}
+	// 检查是否是登录API的请求，如果是，则直接处理
+  router.post('/admin/api/login', () => handleLogin(request, logger));
+  const routerResponse = await router.fetch(request);
+  if (routerResponse) return routerResponse;
 
-	// 2. 验证所有其他 /admin 请求的JWT
+	// 验证所有其他 /admin 请求的JWT
 	const token = getAuthCookie(request, logger);
 	const isValid = await verifyJwt(jwtSecret, token, logger);
 
