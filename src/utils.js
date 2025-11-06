@@ -38,18 +38,8 @@ export function isBot(userAgent) {
   return /bot|spider|crawl|slurp|ia_archiver/i.test(userAgent);
 }
 
-/*
-export function createResponse(body, status = 200, headers = {}, contentType = "text/json; charset=utf-8") {
-  return new Response(JSON.stringify(body), {status,
-    headers: {
-      'Content-Type': contentType,
-       ...headers
-      },
-  });
-}
-*/
 
-export class response {
+export const response = {
   /**
    * 通用响应方法，使用指定的 content-type
    * @param {any} body - 响应体
@@ -58,11 +48,11 @@ export class response {
    * @param {string} [contentType='text/plain'] - 内容类型
    * @returns {Response} 返回 Response 对象
    */
-  static normal(body, status = 200, headers = {}, contentType = 'text/html; charset=utf-8') {
+  normal(body, status = 200, headers = {}, contentType = 'text/html; charset=utf-8') {
     const headersObj = new Headers(headers || {});
     headersObj.set('Content-Type', contentType);
     return new Response(body, { status, headers: headersObj });
-  }
+  },
 
   /**
    * JSON 响应方法，强制使用 application/json，忽略传入的 contentType
@@ -72,7 +62,7 @@ export class response {
    * @param {any} [contentType] - 被忽略的内容类型参数（仅为保持参数一致性）
    * @returns {Response} 返回 JSON 格式的 Response 对象
    */
-  static json(body, status = 200, headers = {}, contentType) {
+  json(body, status = 200, headers = {}, contentType) {
     const headersObj = new Headers(headers || {});
     headersObj.set('Content-Type', 'application/json');
 

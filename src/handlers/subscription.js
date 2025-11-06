@@ -32,6 +32,6 @@ export async function handleSubscriptionRequest(request, token, logger) {
     return new Response(content, { headers });
   } catch (err) {
     logger.error(err, { customMessage: 'Failed to generate subscription', token });
-    return response.text('Upstream subscription generation failed. Please check the logs.', 502);
+    return response.normal('Upstream subscription generation failed. Please check the logs.', 502);
   }
 }
