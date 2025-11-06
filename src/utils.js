@@ -103,5 +103,11 @@ export function isValidBase64(str) {
  * @returns {string} The Base64-encoded string.
  */
 export function safeBtoa(str) {
-  return btoa(unescape(encodeURIComponent(str)));
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
