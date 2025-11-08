@@ -135,8 +135,8 @@ export function isValidBase64(str) {
   const cleanStr = str.replace(/\s+/g, '');
 
   // 空字符串检查（清理后可能为空）
-  if (len === 0) return false;
-  if (len % 4 !== 0) return false;
+  if (cleanStr.length === 0) return false;
+  if (cleanStr.length % 4 !== 0) return false;
 
   return /^[A-Za-z0-9+/]+={0,2}$/.test(cleanStr);
 }
