@@ -22,7 +22,7 @@ export class SubconverterService {
     const inlineNodes = [];
     const subscriptionUrls = [];
     allSources.forEach(source => {
-      source.toLowerCase().startsWith('http') ? subscriptionUrls.push(source) : inlineNodes.push(source);
+      /^(https?:)?\/\//i.test(source.toLowerCase()) ? subscriptionUrls.push(source) : inlineNodes.push(source);
     });
 
     // 并发获取远程订阅内容
