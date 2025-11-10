@@ -17,6 +17,10 @@ export async function handleRequest(request, env, ctx, logger) {
   router.all('/admin', () => handleAdminRequest(request, logger));
   router.all('/admin/*', () => handleAdminRequest(request, logger));
 
+  router
+    .all('/favicon.ico', () => response.normal('', 404, { 'Content-Type': 'image/x-icon' }))
+    .all('/robots.txt', () => response.normal('User-agent: *\nDisallow: /\n', 200));
+
   // 提取 token (路径的第一部分)
   router.get('/:token/?', ({ params }) => handleSubscriptionRequest(request, params.token, logger));
 
