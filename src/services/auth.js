@@ -161,7 +161,7 @@ export async function verifyJwt(secret, token, logger) {
       return false;
     }
     
-    return true;
+    return payloadData;
   } catch (err) {
     logger.error('JWT verification error:', err);
     return false;
