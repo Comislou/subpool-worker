@@ -2,6 +2,7 @@ import { handleAdminRequest } from './handlers/admin.js';
 import { handleSubscriptionRequest } from './handlers/subscription.js';
 import { renderNginxWelcomePage } from './views/nginx.html.js';
 import { ConfigService } from './services/config.js';
+import { response } from './utils.js';
 import { Router } from 'itty-router';
 
 export async function handleRequest(request, env, ctx, logger) {
@@ -26,8 +27,5 @@ export async function handleRequest(request, env, ctx, logger) {
   logger.warn('Unhandled path, returning default page', { pathname });
   
   // 根路径或任何其他未知路径
-  return new Response(renderNginxWelcomePage(), {
-    status: 200,
-    headers: { 'Content-Type': 'text/html; charset=UTF-8' },
-  });
+  return response.normal(renderNginxWelcomePage(), 200);
 }
