@@ -33,7 +33,7 @@ let _config = null;
 let _env = null;
 let _ctx = null;
 
-function deepMerge(target, ...sources) {
+export function deepMerge(target, ...sources) {
   for (const source of sources) {
     if (!source) continue;
     for (const key in source) {
