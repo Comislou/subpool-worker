@@ -92,7 +92,7 @@ export class SubconverterService {
     const promises = urls.map(url =>
       fetch(url, {
         method: 'GET',
-        headers: { 'User-Agent': `v2rayN/7.15.7 (${request.headers.get('User-Agent') || 'N/A'})` },
+        headers: { 'User-Agent': `${request.headers.get('User-Agent') || 'Mozilla/5.0'} v2rayN/7.15.7 (SubPool-Worker/1.0.0; +https://github.com/illusionlie/subpool-worker)` },
         signal: controller.signal,
       }).then(async resp => {
         if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
