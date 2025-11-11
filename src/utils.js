@@ -48,7 +48,6 @@ const BOT_UA_PATTERNS = new RegExp([
   'QQ',          // QQ
   'MicroMessenger', // 微信
   'request',     // 一些简单的爬虫
-  'curl',
   'wget',
 ].join('|'), 'i');
 
@@ -65,10 +64,6 @@ export function isBot(request) {
   if (!userAgent) score += 30;
   if (BOT_UA_PATTERNS.test(userAgent)) score += 50;
   if (!userAgent.includes('Mozilla/5.0') && !(/Chrome|Safari|Firefox|Edg/).test(userAgent)) score += 10;
-  
-  // 检查是否是 Cloudflare Worker
-  const isWorker = request.headers.get('Cf-Worker') || '';
-  if (isWorker) score += 50;
 
   // 检查 HTTP 版本
   const httpVersion = request.cf?.httpProtocol || '';
@@ -88,7 +83,12 @@ export function isBot(request) {
 
   // 检查 Accept
   const accept = request.headers.get('Accept') || '';
-  if (!accept.includes('text/html') || accept.length < 10) score += 20;
+  if (!accept.includes('text/html') || accept.length < 10) score += 10;
+
+  // 赦免 subconverter 的回调
+  const subconverterVersion = request.headers.get('subconverter-version') || '';
+  const subconverterRequest = request.headers.get('subconverter-request') || '';
+  if (subconverterRequest === '1' && subconverterVersion && userAgent.includes('subconverter')) score -= 10;
 
   return { score, ifBot: score >= 50 };
 }
