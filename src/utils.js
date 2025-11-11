@@ -64,7 +64,7 @@ export function isBot(request) {
   const userAgent = request.headers.get('User-Agent') || '';
   if (!userAgent) score += 30;
   if (BOT_UA_PATTERNS.test(userAgent)) score += 50;
-  if (!userAgent.includes('Mozilla/5.0') && !(/Chrome|Safari|Firefox|Edg/).test(userAgent)) score += 30;
+  if (!userAgent.includes('Mozilla/5.0') && !(/Chrome|Safari|Firefox|Edg/).test(userAgent)) score += 10;
   
   // 检查是否是 Cloudflare Worker
   const isWorker = request.headers.get('Cf-Worker') || '';
@@ -72,7 +72,7 @@ export function isBot(request) {
 
   // 检查 HTTP 版本
   const httpVersion = request.cf?.httpProtocol || '';
-  if (httpVersion == 'HTTP/1.1') score += 20;
+  if (httpVersion == 'HTTP/1.1') score += 10;
   if (httpVersion == 'HTTP/1.0') score += 50;
 
   // 检查 TLS 版本
@@ -84,7 +84,7 @@ export function isBot(request) {
   const secMode = request.headers.get('sec-fetch-mode') || '';
   const secDest = request.headers.get('sec-fetch-dest') || '';
   const secUser = request.headers.get('sec-fetch-user') || '';
-  if (!secSite || secMode !== 'navigate' || secDest !== 'document' || !secUser) score += 30;
+  if (!secSite || secMode !== 'navigate' || secDest !== 'document' || !secUser) score += 20;
 
   // 检查 Accept
   const accept = request.headers.get('Accept') || '';
