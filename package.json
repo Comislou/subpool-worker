@@ -1,11 +1,11 @@
 {
   "name": "subpool-worker",
   "version": "0.1.0",
-  "description": "Sub Pool",
+  "description": "SubPool Worker",
   "main": "src/index.js",
   "scripts": {
     "deploy": "npm run build && wrangler deploy",
-    "build": "npm i && wrangler deploy --dry-run --outdir=dist",
+    "build": "npm ci && wrangler deploy --dry-run --outdir=dist",
     "dev": "wrangler dev --env dev"
   },
   "devDependencies": {
